@@ -1,0 +1,69 @@
+name: Deploy Laravel to Hostinger
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Hostinger via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          script: |
+            cd ${{ secrets.EDM_SOLUTION_APP_PATH }}
+
+            echo "Stashing local changes..."
+            git add .
+            git stash
+
+            echo "Pulling latest changes..."
+            git pull origin master
+
+            echo "Installing composer dependencies..."
+            composer2 update
+
+            echo "Running Laravel optimizations..."
+            php artisan migrate:fresh --seed
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan optimize:clear
+            cd public
+            unlink storage
+            ln -s ../storage/app/public storage
+
+            echo "Fixing permissions..."
+            chmod -R 755 storage bootstrap/cache
+
+            echo "Building frontend assets..."
+            npm install && npm run build || echo "No assets to build"
+
+      - name: Deployment Notification
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          # Email Content
+          subject: |
+            Deployment Status: ${{ job.status }} for ${{ github.repository }} (${{ github.ref_name }})
+          body: |
+            Workflow: ${{ github.workflow }}
+            Job: ${{ github.job }}
+            Status: ${{ job.status }}
+            Commit: ${{ github.sha }}
+            Details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          to: stackf63@gmail.com, saddamkhoso203@gmail.com
+          from: GitHub Actions <stackf63@gmail.com>
