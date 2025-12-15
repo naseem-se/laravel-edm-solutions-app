@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\PlatformConfig;
 use App\Models\Shift;
 use App\Models\User;
 use App\Services\StripePaymentService;
@@ -112,6 +113,41 @@ class PaymentController extends Controller
     }
 
     /**
+     * Get Payment History
+     */
+    public function getPaymentHistory()
+    {
+        try {
+            $user = auth()->user();
+
+            // Payments made by user (as payer)
+            $paymentsMade = Payment::where('user_id', $user->id)
+                ->with(['recipient', 'shift'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Payments received by user (as recipient)
+            $paymentsReceived = Payment::where('recipient_id', $user->id)
+                ->with(['payer', 'shift'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'payments_made' => $paymentsMade,
+                    'payments_received' => $paymentsReceived,
+                ],
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get payment history: ' . $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Create Payment Intent for paying a worker
      */
     public function createPaymentForWorker(Request $request)
@@ -122,7 +158,6 @@ class PaymentController extends Controller
                 'shift_ids' => 'required|array',
                 'shift_ids.*' => 'exists:shifts,id',
                 'amount' => 'required|numeric|min:1',
-                'platform_fee' => 'required|numeric|min:0',
                 'recipient_amount' => 'required|numeric|min:1',
             ]);
 
@@ -161,11 +196,14 @@ class PaymentController extends Controller
                 'shift_ids' => implode(',', $request->shift_ids),
             ];
 
+            $platformFeePercentage = PlatformConfig::getValue('commission_percentage', 10);
+            $platformFee = ($request->amount * $platformFeePercentage) / 100;
+
             // Create payment intent with automatic transfer
             $result = $this->stripeService->createPaymentIntentWithTransfer(
                 $request->amount,
                 $recipient->stripe_account_id,
-                $request->platform_fee,
+                $platformFee,
                 'usd',
                 $metadata
             );
@@ -228,36 +266,27 @@ class PaymentController extends Controller
      */
     public function confirmPayment(Request $request)
     {
+        $request->validate([
+            'payment_intent_id' => 'required|string',
+            'payment_method_id' => 'nullable|string',
+        ]);
+
         try {
-            $validator = Validator::make($request->all(), [
-                'payment_intent_id' => 'required|string',
-            ]);
+            // Confirm payment in Stripe (API-only)
+            $intent = $this->stripeService->confirmPaymentIntent($request->payment_intent_id, $request->payment_method_id);
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'errors' => $validator->errors(),
-                ], 422);
-            }
-
+            // Fetch payment record from DB
             $payment = Payment::where('payment_intent_id', $request->payment_intent_id)->firstOrFail();
 
-            // Retrieve payment intent from Stripe
-            $paymentIntent = $this->stripeService->retrievePaymentIntent($request->payment_intent_id);
-
-            // Update payment status
+            // Update payment status in DB
             $payment->update([
-                'status' => $paymentIntent->status,
-                'payment_method_id' => $paymentIntent->payment_method ?? null,
-                'paid_at' => $paymentIntent->status === 'succeeded' ? now() : null,
-                'transfer_status' => $paymentIntent->status === 'succeeded' ? 'succeeded' : 'pending',
+                'status' => $intent->status === 'succeeded' ? 'completed' : $intent->status,
+                'payment_method_id' => $intent->payment_method ?? null,
+                'paid_at' => $intent->status === 'succeeded' ? now() : null,
+                'transfer_status' => $intent->status === 'succeeded' ? 'succeeded' : 'pending',
             ]);
 
-            // Update shifts status to Paid (status 6)
-            if ($paymentIntent->status === 'succeeded') {
-                $shiftIds = explode(',', $payment->metadata['shift_ids'] ?? '');
-                Shift::whereIn('id', $shiftIds)->update(['status' => 6]);
-            }
+            // ⚠️ Do NOT update shifts here; let webhook handle it
 
             return response()->json([
                 'success' => true,
@@ -271,6 +300,7 @@ class PaymentController extends Controller
                     'paid_at' => $payment->paid_at,
                 ],
             ]);
+
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => false,
@@ -278,6 +308,7 @@ class PaymentController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Onboard recipient for receiving payments
@@ -317,7 +348,7 @@ class PaymentController extends Controller
 
             if (!$user->stripe_account_id) {
                 return response()->json([
-                    'success' => true,
+                    'success' => false,
                     'data' => [
                         'onboarded' => false,
                         'charges_enabled' => false,
@@ -354,37 +385,23 @@ class PaymentController extends Controller
     }
 
     /**
-     * Get Payment History
+     * Handle Onboard Return
      */
-    public function getPaymentHistory()
+    public function handleOnboardReturn(Request $request)
     {
-        try {
-            $user = auth()->user();
-
-            // Payments made by user (as payer)
-            $paymentsMade = Payment::where('user_id', $user->id)
-                ->with(['recipient', 'shift'])
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            // Payments received by user (as recipient)
-            $paymentsReceived = Payment::where('recipient_id', $user->id)
-                ->with(['payer', 'shift'])
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'payments_made' => $paymentsMade,
-                    'payments_received' => $paymentsReceived,
-                ],
-            ]);
-        } catch (\Throwable $th) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to get payment history: ' . $th->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Onboarding process completed. Please check your onboarding status.',
+        ]);
+    }
+    /**
+     * Handle Onboard Refresh
+     */
+    public function handleOnboardRefresh(Request $request)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Onboarding process refreshed. Please continue your onboarding.',
+        ]);
     }
 }

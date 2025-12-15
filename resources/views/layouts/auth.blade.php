@@ -36,8 +36,8 @@
             <nav class="flex-1 overflow-y-auto py-4 px-3" x-data="{ openShifts: false }">
                 <div class="space-y-1">
                     <!-- Dashboard -->
-                    <a href="{{ route('admin.dashboard') }}"
-                        class="flex items-center px-3 py-2.5 {{ Request::routeIs('admin.dashboard') ? 'bg-[#3d5a9e]' : 'hover:bg-white/5' }} text-white rounded-lg transition-all duration-200">
+                    <a href="{{ route('admin.dashboard.index') }}"
+                        class="flex items-center px-3 py-2.5 {{ Request::routeIs('admin.dashboard.index') ? 'bg-[#3d5a9e]' : 'hover:bg-white/5' }} text-white rounded-lg transition-all duration-200">
                         <i class="fas fa-chart-line w-4 text-sm mr-3"></i>
                         <span class="text-sm">Dashboard</span>
                     </a>
@@ -117,15 +117,15 @@
                     </a>
 
                     <!-- Payroll & Billing -->
-                    <a href="{{ route('pages.payments') }}"
-                        class="flex items-center px-3 py-2.5 {{ Request::routeIs('pages.payments') ? 'bg-[#3d5a9e]' : 'hover:bg-white/5' }} text-white rounded-lg transition-all duration-200">
+                    <a href="{{ route('admin.payments.index') }}"
+                        class="flex items-center px-3 py-2.5 {{ Request::routeIs('admin.payments.*') ? 'bg-[#3d5a9e]' : 'hover:bg-white/5' }} text-white rounded-lg transition-all duration-200">
                         <i class="fas fa-dollar-sign w-4 text-sm mr-3"></i>
                         <span class="text-sm">Payroll & Billing</span>
                     </a>
 
                     <!-- Reports -->
-                    <a href="{{ route('pages.reports') }}"
-                        class="flex items-center px-3 py-2.5 {{ Request::routeIs('pages.reports') ? 'bg-[#3d5a9e]' : 'hover:bg-white/5' }} text-white rounded-lg transition-all duration-200">
+                    <a href="{{ route('admin.reports.index') }}"
+                        class="flex items-center px-3 py-2.5 {{ Request::routeIs('admin.reports.*') ? 'bg-[#3d5a9e]' : 'hover:bg-white/5' }} text-white rounded-lg transition-all duration-200">
                         <i class="fas fa-chart-bar w-4 text-sm mr-3"></i>
                         <span class="text-sm">Reports</span>
                     </a>
@@ -214,7 +214,7 @@
                     <!-- Right: Notifications & User -->
                     <div class="flex items-center gap-4">
                         <!-- Notification Bell -->
-                        <div class="relative" x-data="{ open: false }">
+                        {{-- <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open" @click.away="open = false"
                                 class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -248,10 +248,10 @@
                                     </a>
                                 </div>
                             </div>
-                        </div>
+                        </div> --}}
 
                         <!-- Messages -->
-                        <button
+                        {{-- <button
                             class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -259,18 +259,39 @@
                                 </path>
                             </svg>
                             <span class="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full"></span>
-                        </button>
+                        </button> --}}
+
+                        @auth('admin')
+                        @php
+                            $admin = auth('admin')->user();
+
+                            $names = explode(' ', trim($admin->full_name));
+                            $initials = strtoupper(
+                                mb_substr($names[0] ?? '', 0, 1) .
+                                mb_substr($names[1] ?? '', 0, 1)
+                            );
+
+                            $role = ucwords(str_replace('_', ' ', $admin->role));
+                        @endphp
 
                         <!-- User Profile -->
-                        <div class="flex items-center gap-3 pl-3 border-l border-gray-200">
+                       <div class="flex items-center gap-3 pl-3 border-l border-gray-200">
                             <div class="w-9 h-9 bg-[#2B4A99] rounded-full flex items-center justify-center">
-                                <span class="text-white text-sm font-semibold">SK</span>
+                                <span class="text-white text-sm font-semibold">
+                                    {{ $initials }}
+                                </span>
                             </div>
+
                             <div class="hidden lg:block">
-                                <div class="text-sm font-semibold text-gray-900">Saddam Khoso</div>
-                                <div class="text-xs text-gray-500">Super Admin</div>
+                                <div class="text-sm font-semibold text-gray-900">
+                                    {{ $admin->full_name }}
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    {{ $role }}
+                                </div>
                             </div>
                         </div>
+                        @endauth
                         <div class="border-l border-gray-200" style="height: 30px;width: 30px;padding-left: 5px;">
                             <a href="{{ route('logout') }}">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M569 337C578.4 327.6 578.4 312.4 569 303.1L425 159C418.1 152.1 407.8 150.1 398.8 153.8C389.8 157.5 384 166.3 384 176L384 256L272 256C245.5 256 224 277.5 224 304L224 336C224 362.5 245.5 384 272 384L384 384L384 464C384 473.7 389.8 482.5 398.8 486.2C407.8 489.9 418.1 487.9 425 481L569 337zM224 160C241.7 160 256 145.7 256 128C256 110.3 241.7 96 224 96L160 96C107 96 64 139 64 192L64 448C64 501 107 544 160 544L224 544C241.7 544 256 529.7 256 512C256 494.3 241.7 480 224 480L160 480C142.3 480 128 465.7 128 448L128 192C128 174.3 142.3 160 160 160L224 160z"/></svg>

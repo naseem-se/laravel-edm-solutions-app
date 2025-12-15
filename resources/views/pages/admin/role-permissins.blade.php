@@ -27,6 +27,7 @@
                     Platform Config
                 </button>
                 <button
+                onclick="window.location.href=`{{ route('admin.setting.content.management') }}`"
                     class="px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-t-lg transition-colors">
                     Content Management
                 </button>

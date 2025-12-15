@@ -1,6 +1,6 @@
-
 <?php
 
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Facility\HomeController as FacilityHomeController;
 use App\Http\Controllers\Facility\ShiftController;
 use App\Http\Controllers\User\Api\AuthController;
@@ -22,17 +22,14 @@ Route::prefix('auth')->group(function () {
         Route::post('verify-email', 'verifyEmail');
         Route::post('resend-otp', 'resendOtp');
         Route::post('forget-password', 'forgetPassword');
-        Route::post('login', 'login');
+        Route::post('login', 'login')->name('login');
     });
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::middleware(['worker.mode'])->group(function () {
-        Route::controller(AuthController::class)->group(function () {
-            Route::post('upload/document', 'uploadDocument');
-            Route::post('reset-password', 'resetPassword');
-        });
+
         Route::controller(HomeController::class)->group(function () {
             Route::get('/get/shifts', 'shifts');
             Route::get('/get/shifts/{id}', 'shiftDetails');
@@ -52,16 +49,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::get('/get/weekly-summary', 'getWeeklySummary');
             Route::post('/upload/compliance-document', 'uploadComplianceDocument');
             Route::post('/update/compliance-document', 'uploadComplianceDocument');
-        }); 
+        });
 
         Route::get('/payment/weekly-summary', [PaymentController::class, 'getWeeklySummary']);
-        Route::post('/payment/create-for-worker', [PaymentController::class, 'createPaymentForWorker']);
-        Route::post('/payment/confirm', [PaymentController::class, 'confirmPayment']);
         Route::get('/payment/history', [PaymentController::class, 'getPaymentHistory']);
-
         // Stripe Connect onboarding
         Route::post('/payment/onboard', [PaymentController::class, 'onboardRecipient']);
-        Route::get('/payment/onboard-status', [PaymentController::class, 'checkOnboardingStatus']);
+   
     });
 
     // facility mode routes
@@ -81,7 +75,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::get('get/staff-attendance-details', 'StaffAttendanceDetails');
             Route::get('get/payment-history', 'getPaymentHistory');
         });
+
+        Route::post('/payment/create-for-worker', [PaymentController::class, 'createPaymentForWorker']);
+        Route::post('/payment/confirm', [PaymentController::class, 'confirmPayment']);
+        
     });
 
-     Route::post('logout', [AuthController::class, 'logout']);
+    Route::get('/payment/onboard-status', [PaymentController::class, 'checkOnboardingStatus']);
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::controller(AuthController::class)->group(function () {
+        Route::post('upload/document', 'uploadDocument');
+        Route::post('reset-password', 'resetPassword');
+    });
 });
+
+Route::get('/contents', [SettingController::class, 'getContent']);
+Route::post('/contents', [SettingController::class, 'updateContent']);
+
+Route::get('payment/onboard-return', [PaymentController::class, 'handleOnboardReturn']);
+Route::get('payment/onboard-refresh', [PaymentController::class, 'handleOnboardRefresh']);
+

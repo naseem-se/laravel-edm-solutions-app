@@ -49,8 +49,16 @@
                 </div>
                 <div
                     class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                    450</div>
-                <div class="text-sm text-gray-600">+15.5% vs last month</div>
+                    {{ $currentUsers }}
+                </div>
+                <div class="text-sm text-gray-600">
+                    @if ($usersPercentageChange >= 0)
+                        <span class="text-green-600">+{{ $usersPercentageChange }}%</span>
+                    @else
+                        <span class="text-red-600">{{ $usersPercentageChange }}%</span>
+                    @endif
+                    vs last month
+                </div>
             </div>
 
             <!-- Shift Fill Rate Card -->
@@ -69,8 +77,16 @@
                 </div>
                 <div
                     class="text-4xl font-bold mb-2 bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
-                    92.5%</div>
-                <div class="text-sm text-gray-600">+2.3% vs last month</div>
+                    {{ $currentFillRate }}%
+                </div>
+                <div class="text-sm text-gray-600">
+                    @if ($fillRatePercentageChange >= 0)
+                        <span class="text-green-600">+{{ $fillRatePercentageChange }}%</span>
+                    @else
+                        <span class="text-red-600">{{ $fillRatePercentageChange }}%</span>
+                    @endif
+                    vs last month
+                </div>
             </div>
 
             <!-- Cancellation Rate Card -->
@@ -89,8 +105,16 @@
                 </div>
                 <div
                     class="text-4xl font-bold mb-2 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                    5.2%</div>
-                <div class="text-sm text-gray-600">-1.1% vs last month</div>
+                    {{ $currentCancellationRate }}%
+                </div>
+                <div class="text-sm text-gray-600">
+                    @if ($cancellationRatePercentageChange >= 0)
+                        <span class="text-red-600">+{{ $cancellationRatePercentageChange }}%</span>
+                    @else
+                        <span class="text-green-600">{{ $cancellationRatePercentageChange }}%</span>
+                    @endif
+                    vs last month
+                </div>
             </div>
 
             <!-- Total Revenue Card -->
@@ -109,8 +133,16 @@
                 </div>
                 <div
                     class="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    $602K</div>
-                <div class="text-sm text-gray-600">+18.2% vs last month</div>
+                    {{ $formattedRevenue }}
+                </div>
+                <div class="text-sm text-gray-600">
+                    @if ($revenuePercentageChange >= 0)
+                        <span class="text-green-600">+{{ $revenuePercentageChange }}%</span>
+                    @else
+                        <span class="text-red-600">{{ $revenuePercentageChange }}%</span>
+                    @endif
+                    vs last month
+                </div>
             </div>
         </div>
 
@@ -148,67 +180,60 @@
             </div>
         </div>
 
+        <!-- Key Takeaways -->
         <div class="overflow-x-auto border border-gray-200 rounded-xl bg-white shadow-sm">
             <div class="p-6 border-b border-gray-200">
                 <h2 class="text-lg font-semibold text-gray-800">Key Takeaways</h2>
             </div>
             <div class="p-6">
                 <ul class="space-y-3">
-                    <li class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                        <div
-                            class="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" class="w-4 h-4 text-white">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                        </div>
-                        <p class="text-sm text-gray-700">User base grew by <span class="font-semibold">15.5%</span> this
-                            month, with consistent new user acquisition</p>
-                    </li>
-                    <li class="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-100">
-                        <div
-                            class="w-6 h-6 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" class="w-4 h-4 text-white">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                        </div>
-                        <p class="text-sm text-gray-700">Shift fill rate remains strong at <span
-                                class="font-semibold">92.5%</span>, indicating high platform utilization</p>
-                    </li>
-                    <li class="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-100">
-                        <div
-                            class="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" class="w-4 h-4 text-white">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                        </div>
-                        <p class="text-sm text-gray-700">Cancellation rate decreased to <span
-                                class="font-semibold">5.2%</span>, showing improved commitment from both parties</p>
-                    </li>
-                    <li class="flex items-start gap-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
-                        <div
-                            class="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" class="w-4 h-4 text-white">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                        </div>
-                        <p class="text-sm text-gray-700">Revenue increased by <span class="font-semibold">18.2%</span>
-                            compared to last month, driven by increased facility usage</p>
-                    </li>
-                    <li class="flex items-start gap-3 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
-                        <div
-                            class="w-6 h-6 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" class="w-4 h-4 text-white">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                        </div>
-                        <p class="text-sm text-gray-700">General Hospital and Sunset Care Home are the most active
-                            facilities</p>
-                    </li>
+                    @forelse($keyTakeaways as $takeaway)
+                        @php
+                            $colorMap = [
+                                'blue' => [
+                                    'bg' => 'bg-blue-50',
+                                    'border' => 'border-blue-100',
+                                    'gradient' => 'from-blue-500 to-indigo-600',
+                                ],
+                                'green' => [
+                                    'bg' => 'bg-green-50',
+                                    'border' => 'border-green-100',
+                                    'gradient' => 'from-green-500 to-teal-600',
+                                ],
+                                'orange' => [
+                                    'bg' => 'bg-orange-50',
+                                    'border' => 'border-orange-100',
+                                    'gradient' => 'from-orange-500 to-red-600',
+                                ],
+                                'purple' => [
+                                    'bg' => 'bg-purple-50',
+                                    'border' => 'border-purple-100',
+                                    'gradient' => 'from-purple-500 to-pink-600',
+                                ],
+                                'indigo' => [
+                                    'bg' => 'bg-indigo-50',
+                                    'border' => 'border-indigo-100',
+                                    'gradient' => 'from-indigo-500 to-blue-600',
+                                ],
+                            ];
+                            $colors = $colorMap[$takeaway['color']] ?? $colorMap['blue'];
+                        @endphp
+                        <li
+                            class="flex items-start gap-3 p-3 {{ $colors['bg'] }} rounded-lg border {{ $colors['border'] }}">
+                            <div
+                                class="w-6 h-6 bg-gradient-to-br {{ $colors['gradient'] }} rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="2" stroke="currentColor" class="w-4 h-4 text-white">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                </svg>
+                            </div>
+                            <p class="text-sm text-gray-700">{!! $takeaway['text'] !!}</p>
+                        </li>
+                    @empty
+                        <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                            <p class="text-sm text-gray-600">No data available yet</p>
+                        </li>
+                    @endforelse
                 </ul>
             </div>
         </div>
@@ -222,10 +247,10 @@
         const userGrowthChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                labels: {!! json_encode($chartData['labels']) !!},
                 datasets: [{
                         label: 'Total Users',
-                        data: [133, 175, 233, 300, 367, 450],
+                        data: {!! json_encode($chartData['totalUsers']) !!},
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         borderWidth: 2,
@@ -239,7 +264,7 @@
                     },
                     {
                         label: 'New Users',
-                        data: [50, 67, 58, 67, 67, 67],
+                        data: {!! json_encode($chartData['newUsers']) !!},
                         borderColor: '#14b8a6',
                         backgroundColor: 'rgba(20, 184, 166, 0.1)',
                         borderWidth: 2,
@@ -296,9 +321,9 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: 600,
+                        max: {{ $chartData['maxValue'] }},
                         ticks: {
-                            stepSize: 150,
+                            stepSize: Math.ceil({{ $chartData['maxValue'] }} / 4),
                             font: {
                                 size: 12
                             },
@@ -330,10 +355,10 @@
         const facilityChart = new Chart(ctx1, {
             type: 'bar',
             data: {
-                labels: ['General Hospital', 'City Medical', 'Skilled Care', 'Metro Health'],
+                labels: {!! json_encode($facilityChartData['labels']) !!},
                 datasets: [{
                         label: 'Shifts Posted',
-                        data: [45, 37, 57, 30],
+                        data: {!! json_encode($facilityChartData['shiftsPosted']) !!},
                         backgroundColor: '#3b82f6',
                         borderColor: '#2563eb',
                         borderWidth: 1,
@@ -341,7 +366,7 @@
                     },
                     {
                         label: 'Shifts Filled',
-                        data: [40, 34, 52, 27],
+                        data: {!! json_encode($facilityChartData['shiftsFilled']) !!},
                         backgroundColor: '#14b8a6',
                         borderColor: '#0d9488',
                         borderWidth: 1,
@@ -349,7 +374,7 @@
                     },
                     {
                         label: 'Shifts Cancelled',
-                        data: [5, 3, 5, 3],
+                        data: {!! json_encode($facilityChartData['shiftsCancelled']) !!},
                         backgroundColor: '#ef4444',
                         borderColor: '#dc2626',
                         borderWidth: 1,
@@ -400,9 +425,9 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: 60,
+                        max: {{ $facilityChartData['maxValue'] }},
                         ticks: {
-                            stepSize: 15,
+                            stepSize: Math.ceil({{ $facilityChartData['maxValue'] }} / 4),
                             font: {
                                 size: 12
                             },

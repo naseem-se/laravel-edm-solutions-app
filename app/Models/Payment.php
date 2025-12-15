@@ -12,8 +12,6 @@ class Payment extends Model
     use HasFactory;
     use LogsActivity;
 
-
-
     protected $fillable = [
         'user_id',
         'recipient_id',

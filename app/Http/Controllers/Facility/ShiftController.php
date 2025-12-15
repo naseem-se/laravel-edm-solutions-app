@@ -49,7 +49,7 @@ class ShiftController extends Controller
                 'license_type' => $validated['license_type'],
                 'special_instruction' => $validated['special_instruction'],
                 'location' => $validated['location'],
-                'is_emergency' => $validated['is_emergency'],
+                'is_emergency' => $validated['is_emergency'] ?? false,
             ]);
 
             DB::commit();
@@ -85,7 +85,8 @@ class ShiftController extends Controller
                 'title',
                 'license_type',
                 'special_instruction',
-                'location'
+                'location',
+                'is_emergency',
             ]));
 
             DB::commit();

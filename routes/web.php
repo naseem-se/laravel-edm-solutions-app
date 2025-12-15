@@ -3,7 +3,10 @@
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\ComplianceController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FacilityController;
+use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\Admin\TimesheetController;
@@ -62,35 +65,34 @@ Route::middleware('admin')->controller(TimesheetController::class)->group(functi
     Route::get('/time/sheet', 'index')->name('admin.timesheet.index');
 
 });
+Route::middleware('admin')->controller(ReportController::class)->group(function () {
+    Route::get('/reports', 'index')->name('admin.reports.index');
+
+});
 
 Route::middleware('admin')->controller(SettingController::class)->group(function () {
     Route::get('/setting', 'index')->name('admin.setting.index');
     Route::get('/roles/permission', 'roles')->name('admin.setting.roles.index');
     Route::get('/platform/configuration', 'platformConfigs')->name('admin.setting.platform.config');
+    Route::get('/content/management', 'contentManagement')->name('admin.setting.content.management');
     Route::post('/profile/update', 'updateProfile')->name('admin.profile.update');
     Route::post('/password/update', 'updatePassword')->name('admin.password.update');
     Route::post('/platform/configs/update', 'updatePlatformConfig')->name('admin.platform.config.update');
     
 });
 
+Route::middleware('admin')->controller(DashboardController::class)->group(function () {
+    Route::get('/dashboard', 'index')->name('admin.dashboard.index');
+    // Schedule endpoints
+    Route::get('/schedule/weekly',  'getWeeklySchedule')->name('admin.schedule.weekly');
+    Route::get('/schedule/monthly',  'getMonthlySchedule')->name('admin.schedule.monthly');    
+});
 
-
-Route::view('/dashboard', 'pages.admin.dashboard4')->middleware('admin')->name('admin.dashboard');
-
-
-Route::view('/payments', 'pages.admin.payments')->name('pages.payments');
-Route::view('/payout-payments', 'pages.admin.payout-payments')->name('pages.payout-payments');
-Route::view('/compliance', 'pages.admin.compliance')->name('pages.compliance');
-Route::view('/credential', 'pages.admin.credential')->name('pages.credential');
-// Route::view('/shifts', 'pages.admin.shifts')->name('pages.shifts');
-Route::view('/reports', 'pages.admin.reports')->name('pages.reports');
-Route::view('/document', 'pages.admin.document')->name('pages.document');
-Route::view('/support', 'pages.admin.support')->name('pages.support');
-Route::view('/notification', 'pages.admin.notification')->name('pages.notification');
-
-Route::view('/shift-orchestration', 'pages.admin.shift-orchestration')->name('pages.shift-orchestration');
-Route::view('/smart-match', 'pages.admin.smart-match')->name('pages.smart-match');
-Route::view('/waitlist', 'pages.admin.waitlist')->name('pages.waitlist');
+Route::middleware('admin')->controller(PaymentController::class)->group(function () {
+    Route::get('/payments', 'index')->name('admin.payments.index');
+    Route::get('/payout/payments', 'payouts')->name('admin.payments.worker.invoices');
+    Route::get('commission/tracking', 'commissionTracking')->name('admin.payments.commission.tracking');
+});
 
 
 Route::post('/webhook/stripe', [StripeWebhookController::class, 'handleWebhook']);
@@ -98,3 +100,23 @@ Route::post('/webhook/stripe', [StripeWebhookController::class, 'handleWebhook']
 Route::get('/audit/logs', [AuditLogController::class, 'index'])
     ->middleware('admin')
     ->name('admin.audit.logs');
+
+
+
+
+// Route::view('/payments', 'pages.admin.payments')->name('pages.payments');
+// Route::view('/payout-payments', 'pages.admin.payout-payments')->name('pages.payout-payments');
+// Route::view('/compliance', 'pages.admin.compliance')->name('pages.compliance');
+// Route::view('/credential', 'pages.admin.credential')->name('pages.credential');
+// Route::view('/shifts', 'pages.admin.shifts')->name('pages.shifts');
+// Route::view('/reports', 'pages.admin.reports')->name('pages.reports');
+// Route::view('/document', 'pages.admin.document')->name('pages.document');
+// Route::view('/support', 'pages.admin.support')->name('pages.support');
+// Route::view('/notification', 'pages.admin.notification')->name('pages.notification');
+
+// Route::view('/shift-orchestration', 'pages.admin.shift-orchestration')->name('pages.shift-orchestration');
+// Route::view('/smart-match', 'pages.admin.smart-match')->name('pages.smart-match');
+// Route::view('/waitlist', 'pages.admin.waitlist')->name('pages.waitlist');
+
+
+

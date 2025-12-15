@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Content;
 use App\Models\PlatformConfig;
 use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
@@ -109,6 +110,25 @@ class SettingController extends Controller
         $settings->save();
 
         return back()->with('success', 'Platform configurations updated successfully!');
+    }
+
+    public function contentManagement()
+    {
+        $content = Content::first();
+        return view('pages.admin.content-management', compact('content'));
+    }
+
+    public function getContent() {
+        $content = Content::first() ?? new Content();
+        return response()->json(['data' => $content]);
+    }
+
+    public function updateContent(Request $request) {
+        $content = Content::first() ?? new Content();
+        $content->fill($request->all());
+        $content->save();
+        
+        return response()->json(['success' => true]);
     }
 
 

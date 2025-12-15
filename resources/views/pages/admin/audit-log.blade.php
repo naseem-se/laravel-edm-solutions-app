@@ -173,7 +173,7 @@
                                         @endif
                                         rounded-full text-xs font-medium flex items-center gap-1.5 w-fit">
 
-                                        {{ ucfirst($log->log_name) }}
+                                        {{ $log->event ? ucfirst($log->event) : ucfirst($log->log_name) }}
                                     </span>
                                 </td>
 
@@ -203,16 +203,22 @@
                                 <!-- Details -->
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-600 space-y-1">
-                                        @if(isset($log->properties['attributes']) && is_array($log->properties['attributes']))
-                                            @foreach($log->properties['attributes'] as $key => $value)
-                                                <div>
-                                                    <strong class="text-gray-700">{{ ucwords(str_replace('_', ' ', $key)) }}:</strong>
-                                                    <span>{{ $value }}</span>
-                                                </div>
-                                            @endforeach
-                                        @else
-                                            <span>{{ $log->description }}</span>
-                                        @endif
+                                        @if(isset($log->properties['attributes']) && isset($log->properties['old']))
+                                        @php
+                                            $new = $log->properties['attributes'];
+                                            $old = $log->properties['old'];
+                                            $changed = array_diff_assoc($new, $old); // only changed fields
+                                        @endphp
+
+                                        @foreach($changed as $key => $value)
+                                            <div>
+                                                <strong>{{ ucwords(str_replace('_', ' ', $key)) }}:</strong>
+                                                <span>{{ $value }}</span>
+                                            </div>
+                                        @endforeach
+                                    @else
+                                        <span>{{ $log->description }}</span>
+                                    @endif
                                     </div>
                                 </td>
 

@@ -102,6 +102,7 @@ class StripePaymentService
                 'metadata' => $metadata,
                 'automatic_payment_methods' => [
                     'enabled' => true,
+                    'allow_redirects' => 'never',
                 ],
             ]);
 
@@ -156,6 +157,8 @@ class StripePaymentService
                 'metadata' => $metadata,
                 'automatic_payment_methods' => [
                     'enabled' => true,
+                    'allow_redirects' => 'never',
+
                 ],
             ]);
 
@@ -181,6 +184,26 @@ class StripePaymentService
             return PaymentIntent::retrieve($paymentIntentId);
         } catch (Exception $e) {
             throw new Exception('Failed to retrieve payment: ' . $e->getMessage());
+        }
+    }
+
+    public function confirmPaymentIntent(string $paymentIntentId, ?string $paymentMethodId = null)
+    {
+        try {
+            $intent = PaymentIntent::retrieve($paymentIntentId);
+
+            if ($intent->status !== 'requires_payment_method') {
+                return $intent; // already processed
+            }
+
+            $intent->confirm([
+                'payment_method' => $paymentMethodId ?? 'pm_card_visa',
+            ]);
+
+            return $intent;
+
+        } catch (Exception $e) {
+            throw new Exception('Failed to confirm payment intent: ' . $e->getMessage());
         }
     }
 }

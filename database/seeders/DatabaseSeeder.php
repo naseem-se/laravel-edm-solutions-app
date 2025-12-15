@@ -23,6 +23,23 @@ class DatabaseSeeder extends Seeder
         //     'email' => 'test@example.com',
         // ]);
 
+         DB::table('admins')->insert([
+            [
+                'full_name' => 'Super Admin',
+                'email' => 'admin@edmsolutions.org',
+                'phone_number' => '03001234567',
+                'email_verified_at' => Carbon::now(),
+                'password' => Hash::make('admin123'),
+                'is_google' => false,
+                'is_apple' => false,
+                'code' => 0,
+                'id_card' => 'alice_id.pdf',
+                'certificate' => 'alice_cert.pdf',
+                'is_verified' => true,
+                'role' => 'super_admin',
+                'stripe_onboarded' => false,
+            ],
+        ]);
         DB::table('users')->insert([
             [
                 'full_name' => 'Alice Johnson',

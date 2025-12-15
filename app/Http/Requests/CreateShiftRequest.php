@@ -29,10 +29,10 @@ class CreateShiftRequest extends FormRequest
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'title' => ['required', 'string'],
-            'license_type' => ['required', 'string', 'max:255'],
+            'license_type' => ['nullable', 'string', 'max:255'],
             'special_instruction' => ['nullable', 'string'],
             'location' => ['required', 'string', 'max:255'],
-            'is_emergency' => ['nullable', 'boolean', 'in:true,false'],
+            'is_emergency' => ['nullable', 'boolean'],
         ];
     }
 
