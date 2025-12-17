@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\Admin\TimesheetController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\User\Api\ShiftInvitationController;
 use App\Http\Controllers\User\Api\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -101,6 +102,7 @@ Route::get('/audit/logs', [AuditLogController::class, 'index'])
     ->middleware('admin')
     ->name('admin.audit.logs');
 
+Route::get('/invitations/{token}', [ShiftInvitationController::class, 'show'])->name('invitation.show');
 
 
 

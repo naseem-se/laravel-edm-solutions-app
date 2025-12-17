@@ -50,6 +50,7 @@ class ShiftController extends Controller
                 'special_instruction' => $validated['special_instruction'],
                 'location' => $validated['location'],
                 'is_emergency' => $validated['is_emergency'] ?? false,
+                'status' => 1, // Opened
             ]);
 
             DB::commit();
@@ -135,6 +136,40 @@ class ShiftController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete shift: ' . $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function rejectShift($id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $user = auth()->user();
+
+            // Facility can only reject their own shifts
+            $shift = Shift::where('user_id', $user->id)->findOrFail($id);
+
+            $shift->status = 1; // Set status to opened
+            $shift->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Shift rejected successfully.'
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Shift not found or not owned by you.'
+            ], 404);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reject shift: ' . $th->getMessage()
             ], 500);
         }
     }

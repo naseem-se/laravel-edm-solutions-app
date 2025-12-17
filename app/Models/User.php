@@ -43,12 +43,17 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'specialities' => 'array',
         ];
     }
 
+    public function facilityDetail()
+    {
+        return $this->hasOne(FacilityDetail::class, 'facility_id');
+    }
     public function documents()
     {
-        return $this->hasMany(Document::class, 'user_id');
+        return $this->hasMany(Document::class);
     }
 
     public function claimShifts()
@@ -59,6 +64,26 @@ class User extends Authenticatable
     public function activeShifts()
     {
         return $this->hasMany(Shift::class, 'user_id')->where('status', 1);
+    }
+
+    public function shifts()
+    {
+        return $this->hasMany(Shift::class, 'user_id');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'user_id');
+    }
+
+    public function workerReviews()
+    {
+        return $this->hasMany(Review::class, 'worker_id');
+    }
+
+    public function facilityReviews()
+    {
+        return $this->hasMany(Review::class, 'facility_id');
     }
 
     public function bankAccount()

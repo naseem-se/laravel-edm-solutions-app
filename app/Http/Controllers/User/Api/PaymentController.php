@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PaymentResource;
 use App\Models\Payment;
 use App\Models\PlatformConfig;
 use App\Models\Shift;
@@ -120,24 +121,43 @@ class PaymentController extends Controller
         try {
             $user = auth()->user();
 
-            // Payments made by user (as payer)
-            $paymentsMade = Payment::where('user_id', $user->id)
+            // Payments received by user (as recipient)
+            $paymentsReceived = Payment::where('recipient_id', $user->id)
                 ->with(['recipient', 'shift'])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            // Payments received by user (as recipient)
-            $paymentsReceived = Payment::where('recipient_id', $user->id)
-                ->with(['payer', 'shift'])
-                ->orderBy('created_at', 'desc')
-                ->get();
+            // Current month earnings
+            $currentMonth = now()->month;
+            $currentYear = now()->year;
+            
+            $thisMonthEarnings = Payment::where('recipient_id', $user->id)
+                ->where('status', 'completed')
+                ->whereMonth('created_at', $currentMonth)
+                ->whereYear('created_at', $currentYear)
+                ->sum('amount');
+
+            // Last month earnings
+            $lastMonth = now()->subMonth();
+            $lastMonthEarnings = Payment::where('recipient_id', $user->id)
+                ->where('status', 'completed')
+                ->whereMonth('created_at', $lastMonth->month)
+                ->whereYear('created_at', $lastMonth->year)
+                ->sum('amount');
+            
+            // Next pending payment
+            $nextPayment = Payment::where('recipient_id', $user->id)
+                ->where('status', 'pending')
+                ->orderBy('id', 'asc')
+                ->first();
 
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'payments_made' => $paymentsMade,
-                    'payments_received' => $paymentsReceived,
-                ],
+                'current_month_earnings' => round($thisMonthEarnings, 2),
+                'last_month_earnings' => round($lastMonthEarnings, 2),
+                'data' => PaymentResource::collection($paymentsReceived),
+                'next_pending_payment' => $nextPayment ? new PaymentResource($nextPayment) : null,
+                
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -308,7 +328,6 @@ class PaymentController extends Controller
             ], 500);
         }
     }
-
 
     /**
      * Onboard recipient for receiving payments

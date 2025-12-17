@@ -18,37 +18,54 @@ class ProfileController extends Controller
     public function updateProfile(Request $request)
     {
         try {
-            // $validator = Validator::make($request->all(), [
-            //     'email' => 'required|string|email|max:255|unique:users',
-            //     'phone_number' => 'required|string|max:255|unique:users',
-            // ]);
-            $user = auth()->user();
-            $filename = "";
-            if ($request->hasFile('image')) {
-                $path = public_path('storage\\' . $user->image);
-                if (File::exists($path)) {
-                    File::delete($path);
-                }
-                $filename = $request->image->store('profile', 'public');
-            } else {
-                $filename = $user->image;
-            }
-            $user->update([
-                'address' => $request->address,
-                'city' => $request->city,
-                'zip_code' => $request->zip_code,
-                'image' => $filename
+            $validated = $request->validate([
+                'address' => 'required|string|max:255',
+                'city' => 'required|string|max:100',
+                'zip_code' => 'required|string|max:20',
+                'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+                'department' => 'required|string|max:255',
+                'job_title' => 'required|string|max:255',
+                'specialities' => 'required|array',
+                'specialities.*' => 'string|max:255',
             ]);
+
+            $user = auth()->user();
+
+            // Default to existing image
+            $filename = $user->image;
+
+            if ($request->hasFile('image')) {
+                // Delete old image safely
+                if ($user->image && Storage::disk('public')->exists($user->image)) {
+                    Storage::disk('public')->delete($user->image);
+                }
+
+                // Store new image
+                $filename = $request->file('image')->store('profile', 'public');
+            }
+
+            $user->update([
+                'address' => $validated['address'],
+                'city' => $validated['city'],
+                'zip_code' => $validated['zip_code'],
+                'image' => $filename,
+                'department' => $validated['department'],
+                'job_title' => $validated['job_title'],
+                'specialities' => $validated['specialities'], // JSON cast recommended
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Profile updated successfully',
-                'data' => $user
+                'data' => $user->fresh(),
             ]);
+
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => false,
-                'message' => $th->getMessage()
-            ]);
+                'message' => 'Something went wrong',
+                'error' => $th->getMessage(),
+            ], 500);
         }
     }
 
@@ -137,7 +154,7 @@ class ProfileController extends Controller
         $userId = auth()->id();
 
         $weekStart = now()->startOfWeek();
-        $weekEnd   = now()->endOfWeek();
+        $weekEnd = now()->endOfWeek();
 
         // Daily Entries
         $entries = DB::table('claim_shifts')
@@ -154,7 +171,7 @@ class ProfileController extends Controller
                 return [
                     'day' => $item->day_name,
                     'date' => \Carbon\Carbon::parse($item->entry_date)->format('M d'),
-                    'hours' => (float)$item->hours,
+                    'hours' => (float) $item->hours,
                 ];
             });
 
@@ -195,8 +212,8 @@ class ProfileController extends Controller
 
             // Check if document already exists for this user + type
             $existing = Document::where('user_id', $userId)
-                                ->where('type', $request->type)
-                                ->first();
+                ->where('type', $request->type)
+                ->first();
 
             // Upload new file
             $path = $request->file('document')->store('documents', 'public');

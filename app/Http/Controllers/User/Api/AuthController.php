@@ -285,6 +285,39 @@ class AuthController extends Controller
         }
     }
 
+    public function deleteAccount(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => ['User not found.'],
+                ]);
+            }
+
+            activity()
+            ->causedBy($user)
+            ->inLog('delete_account')
+            ->withProperties(['ip' => request()->ip()])
+            ->log('User account deleted');
+
+            $user->tokens()->delete();
+            $user->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => ['Account deleted successfully.'],
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => [$th->getMessage()],
+            ]);
+        }
+    }
+
     public function logout(Request $request)
     {
         try {
@@ -307,6 +340,45 @@ class AuthController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => ['Logged out successfully.'],
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => [$th->getMessage()],
+            ]);
+        }
+    }
+
+    public function changePassword(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'current_password' => 'required|string',
+                'new_password' => 'required|string|min:6|confirmed',
+            ]);
+
+            $user = auth()->user();
+
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => ['Current password is incorrect.'],
+                ]);
+            }
+
+            $user->update([
+                'password' => bcrypt($validated['new_password']),
+            ]);
+
+            activity()
+            ->causedBy($user)
+            ->inLog('change_password')
+            ->withProperties(['ip' => request()->ip()])
+            ->log('User changed password.');
+
+            return response()->json([
+                'success' => true,
+                'message' => ['Password changed successfully.'],
             ]);
         } catch (\Throwable $th) {
             return response()->json([
