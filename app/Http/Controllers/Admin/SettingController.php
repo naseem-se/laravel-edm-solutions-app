@@ -19,34 +19,48 @@ class SettingController extends Controller
     }
     public function updateProfile(Request $request)
     {
-        $admin = auth()->guard('admin')->user();
-
-        $request->validate([
-            'full_name' => 'required|string|max:100',
-            'email' => 'required|email|unique:admins,email,' . $admin->id,
-            'phone' => 'nullable|string|max:20',
-            'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-        ]);
-
-        // Handle photo upload
-        if ($request->hasFile('photo')) {
-
-            // Delete old photo if exists
-            if ($admin->image && Storage::disk('public')->exists($admin->image)) {
-                Storage::disk('public')->delete($admin->image);
+        try {
+            $admin = auth()->guard('admin')->user();
+    
+            if (!$admin) {
+                return back()->with('error', 'Unauthorized access.');
             }
-
-            // Upload new photo
-            $path = $request->file('photo')->store('admin/photos', 'public');
-            $admin->image = $path;
+    
+            $request->validate([
+                'full_name' => 'required|string|max:100',
+                'email' => 'required|email|unique:admins,email,' . $admin->id,
+                'phone' => 'nullable|string|max:20',
+                'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            ]);
+    
+            // Handle photo upload
+            if ($request->hasFile('photo')) {
+    
+                // Delete old photo if exists
+                if ($admin->image && Storage::disk('public')->exists($admin->image)) {
+                    Storage::disk('public')->delete($admin->image);
+                }
+    
+                // Upload new photo
+                $path = $request->file('photo')->store('admin/photos', 'public');
+                $admin->image = $path;
+            }
+    
+            $admin->full_name = $request->full_name;
+            $admin->email = $request->email;
+            $admin->phone_number = $request->phone;
+            $admin->save();
+    
+            return back()->with('success', 'Profile updated successfully!');
+    
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Validation errors (Laravel will auto-redirect with errors)
+            return back()->with('error', $e);
+    
+        } catch (\Throwable $e) {
+    
+            return back()->with('error', 'Something went wrong. Please try again.');
         }
-
-        $admin->full_name = $request->full_name;
-        $admin->email = $request->email;
-        $admin->phone_number = $request->phone;
-        $admin->save();
-
-        return back()->with('success', 'Profile updated successfully!');
     }
 
     public function updatePassword(Request $request)

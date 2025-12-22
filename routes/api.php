@@ -84,6 +84,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::controller(ShiftController::class)->group(function () {
             Route::get('/facility/get/shifts', 'getShift');
             Route::post('/create/shift', 'createShift');
+            Route::post('/create/bulk/shift', 'createBulkShift');
             Route::post('/create/update/{id}', 'updateShift');
             Route::get('/delete/shift/{id}', 'deleteShift');
             Route::post('/reject/shift/{id}', 'rejectShift');

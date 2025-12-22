@@ -10,26 +10,26 @@
                 <h1 class="text-3xl font-bold text-black mb-1">Reports & Analytics</h1>
                 <p class="text-gray-500 text-base">Insights on growth, revenue, and activity</p>
             </div>
-            <div class="flex items-center gap-3">
-                <button
-                    class="bg-white text-gray-700 border-2 border-gray-300 px-6 py-2 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-400 transform hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-lg flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                    </svg>
-                    Export CSV
-                </button>
-                <button
-                    class="bg-black text-white px-6 py-2 rounded-xl font-semibold hover:bg-gray-900 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="white" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                    </svg>
-                    Export PDF
-                </button>
-            </div>
+            <!--<div class="flex items-center gap-3">-->
+            <!--    <button-->
+            <!--        class="bg-white text-gray-700 border-2 border-gray-300 px-6 py-2 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-400 transform hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-lg flex items-center gap-2">-->
+            <!--        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"-->
+            <!--            stroke="currentColor" class="w-5 h-5">-->
+            <!--            <path stroke-linecap="round" stroke-linejoin="round"-->
+            <!--                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />-->
+            <!--        </svg>-->
+            <!--        Export CSV-->
+            <!--    </button>-->
+            <!--    <button-->
+            <!--        class="bg-black text-white px-6 py-2 rounded-xl font-semibold hover:bg-gray-900 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2">-->
+            <!--        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"-->
+            <!--            stroke="white" class="w-5 h-5">-->
+            <!--            <path stroke-linecap="round" stroke-linejoin="round"-->
+            <!--                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />-->
+            <!--        </svg>-->
+            <!--        Export PDF-->
+            <!--    </button>-->
+            <!--</div>-->
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -169,16 +169,16 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto border border-gray-200 rounded-xl bg-white shadow-sm mb-6">
-            <div class="p-6 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-800">Revenue & Payouts Comparison</h2>
-            </div>
-            <div class="p-6">
-                <div class="relative" style="height: 400px;">
-                    <canvas id="revenueChart"></canvas>
-                </div>
-            </div>
-        </div>
+        <!--<div class="overflow-x-auto border border-gray-200 rounded-xl bg-white shadow-sm mb-6">-->
+        <!--    <div class="p-6 border-b border-gray-200">-->
+        <!--        <h2 class="text-lg font-semibold text-gray-800">Revenue & Payouts Comparison</h2>-->
+        <!--    </div>-->
+        <!--    <div class="p-6">-->
+        <!--        <div class="relative" style="height: 400px;">-->
+        <!--            <canvas id="revenueChart"></canvas>-->
+        <!--        </div>-->
+        <!--    </div>-->
+        <!--</div>-->
 
         <!-- Key Takeaways -->
         <div class="overflow-x-auto border border-gray-200 rounded-xl bg-white shadow-sm">

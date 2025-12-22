@@ -9,6 +9,7 @@ use App\Http\Resources\ShiftResource;
 use App\Models\Shift;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class ShiftController extends Controller
 {
@@ -65,6 +66,67 @@ class ShiftController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create shift: ' . $th->getMessage(),
+            ], 500);
+        }
+    }
+    public function createBulkShift(Request $request)
+    {
+        // Validate request
+        $validator = Validator::make($request->all(), [
+            'shifts' => 'required|array|min:1',
+
+            'shifts.*.date' => 'required|date',
+            'shifts.*.pay_per_hour' => 'required|numeric|min:0',
+            'shifts.*.start_time' => 'required|date_format:H:i',
+            'shifts.*.end_time' => 'required|date_format:H:i|after:shifts.*.start_time',
+            'shifts.*.title' => 'required|string|max:255',
+            'shifts.*.license_type' => 'required|string|max:255',
+            'shifts.*.special_instruction' => 'nullable|string',
+            'shifts.*.location' => 'required|string|max:255',
+            'shifts.*.is_emergency' => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($request->shifts as $shiftData) {
+                Shift::create([
+                    'user_id' => auth()->id(),
+                    'date' => $shiftData['date'],
+                    'pay_per_hour' => $shiftData['pay_per_hour'],
+                    'start_time' => $shiftData['start_time'],
+                    'end_time' => $shiftData['end_time'],
+                    'title' => $shiftData['title'],
+                    'license_type' => $shiftData['license_type'],
+                    'special_instruction' => $shiftData['special_instruction'] ?? null,
+                    'location' => $shiftData['location'],
+                    'is_emergency' => $shiftData['is_emergency'] ?? false,
+                    'status' => 1, // Open
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Bulk shifts created successfully.',
+            ], 201);
+
+        } catch (\Throwable $th) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create bulk shifts.',
+                'error' => $th->getMessage(),
             ], 500);
         }
     }

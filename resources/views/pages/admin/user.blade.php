@@ -163,6 +163,9 @@
                             </tr>
                         @endforelse
                     </tbody>
+                     <div class="px-6 py-4">
+                    {{ $users->links() }}
+                </div>
                 </table>
             </div>
             <!-- Pagination -->

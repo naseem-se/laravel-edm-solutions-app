@@ -26,7 +26,9 @@ class ShiftResource extends JsonResource
             'status' => $this->status,
             'is_emergency' => $this->is_emergency,
             'status_text' => $this->getStatusText($this->status),
-            'is_claimed' => $this->claimShift?->status == 'claimed' ? 'Claimed' : 'Claim',
+            'is_claimed' => $this->status == 3 ? 'Claimed' : 'Claim',
+            'date' => $this->date,
+            'claimed_by' => $this->claimShift ? new UserResource($this->claimShift->user) : null,
         ];
     }
 

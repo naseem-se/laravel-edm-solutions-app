@@ -23,7 +23,7 @@ class HomeController extends Controller
 
             // Only get shifts created by the logged-in facility
             $shifts = Shift::where('user_id', $user->id)
-                ->whereIn('status', [1, 2, -1])
+                ->whereIn('status', [1, 2, 3, -1])
                 ->orderBy('date', 'desc')
                 ->get()
                 ->groupBy('status');

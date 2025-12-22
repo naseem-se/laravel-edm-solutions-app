@@ -198,6 +198,9 @@
                         @endforeach
 
                     </tbody>
+                     <div class="px-6 py-4">
+                    {{ $shifts->links() }}
+                </div>
                 </table>
             </div>
         </div>

@@ -24,9 +24,10 @@ class HomeController extends Controller
 
 
             // Fetch shifts for the given date
-            $shifts = Shift::where('status', 1)
-                ->whereDate('date', $date) // assuming your shifts table has 'date' column
-                ->with('claimShift')
+            $shifts = Shift::
+                // where('status', 1)
+                // ->whereDate('date', $date) // assuming your shifts table has 'date' column
+                with('claimShift')
                 ->latest()
                 ->get();
 
@@ -134,65 +135,87 @@ class HomeController extends Controller
     {
         try {
             $user = auth()->user();
-            $claimed_shift = $user->claimShifts()
-                ->with('shift') // if claimShift belongsTo Shift
+        
+            $claimed_shifts = $user->claimShifts()
+                ->with('shift')
                 ->latest()
-                ->first();
-
-            if (!$claimed_shift) {
+                ->get();
+        
+            if ($claimed_shifts->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No claimed shift found.',
+                    'message' => 'No claimed shifts found.',
                 ]);
             }
-
+        
             $now = Carbon::now();
+        
+            $data = $claimed_shifts->map(function ($claimed_shift) use ($now) {
 
-            // Combine date + time if shift date exists
-            $shiftDate = $claimed_shift->shift?->date ?? Carbon::today()->toDateString();
-            $start = Carbon::parse("{$shiftDate} {$claimed_shift->start_time}");
-            $end = Carbon::parse("{$shiftDate} {$claimed_shift->end_time}");
-            $check_in_enabled = false;
-            $check_out_enabled = false;
+                $shift = $claimed_shift->shift instanceof \Illuminate\Database\Eloquent\Collection
+                    ? $claimed_shift->shift->first()
+                    : $claimed_shift->shift;
 
+                $shiftDate = $shift?->date ?? Carbon::today()->toDateString();
 
+                $start = Carbon::parse($shiftDate . ' ' . $claimed_shift->start_time);
+                $end = Carbon::parse($shiftDate . ' ' . $claimed_shift->end_time);
 
-            if ($claimed_shift->check_in == '00:00:00') {
-                if ($now->greaterThanOrEqualTo($start)) {
+                $check_in_enabled = false;
+                $check_out_enabled = false;
+
+                if ($claimed_shift->check_in === '00:00:00' && $now->greaterThanOrEqualTo($start)) {
                     $check_in_enabled = true;
                 }
-            } else {
-                // Check-out logic
-                if ($claimed_shift->check_out == '00:00:00') {
-                    if ($now->greaterThanOrEqualTo($end)) {
-                        $check_out_enabled = true;
-                    }
-                }
-            }
 
-            return response()->json([
-                'success' => true,
-                'data' => [
+                if (
+                    $claimed_shift->check_in !== '00:00:00' &&
+                    $claimed_shift->check_out === '00:00:00' &&
+                    $now->greaterThanOrEqualTo($end)
+                ) {
+                    $check_out_enabled = true;
+                }
+
+                return [
                     'id' => $claimed_shift->id,
                     'shift_id' => $claimed_shift->shift_id,
                     'user_id' => $claimed_shift->user_id,
                     'start_time' => Carbon::parse($claimed_shift->start_time)->format('g:i A'),
                     'end_time' => Carbon::parse($claimed_shift->end_time)->format('g:i A'),
-                    'check_in' => $claimed_shift->check_in == '00:00:00' ? '00:00:00' : Carbon::parse($claimed_shift->check_in)->format('g:i A'),
-                    'check_out' => $claimed_shift->check_out == '00:00:00' ? '00:00:00' : Carbon::parse($claimed_shift->check_out)->format('g:i A'),
                     'check_in_enabled' => $check_in_enabled,
                     'check_out_enabled' => $check_out_enabled,
                     'location' => $claimed_shift->location,
-                    'created_at' => $claimed_shift->created_at,
-                    'updated_at' => $claimed_shift->updated_at,
-                ]
+                    'status'=> $this->getStatusText($claimed_shift->shift->status),
+                    'created_at' => $claimed_shift->created_at->toDateTimeString(),
+                ];
+            });
+        
+            return response()->json([
+                'success' => true,
+                'data' => $data
             ]);
+        
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => false,
                 'message' => $th->getMessage(),
             ]);
         }
+    }
+    
+    private function getStatusText($status)
+    {
+        return match ($status) {
+            0 => 'Pending',
+            1 => 'Opened',
+            2 => 'Pending Approval',
+            3 => 'Confirmed',
+            4 => 'In Progress',
+            5 => 'Completed',
+            6 => 'Paid',
+            -1 => 'Cancelled',
+            default => 'Unknown',
+        };
     }
 
     public function checkInShift(Request $request)

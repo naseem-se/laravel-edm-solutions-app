@@ -55,7 +55,7 @@
         <div class="overflow-x-auto border border-gray-200 rounded-xl bg-white shadow-sm">
             <div class="p-6 border-b border-gray-200">
                 <h2 class="text-lg font-semibold text-gray-800">Facility List <span
-                        class="text-gray-500 font-normal">(5)</span></h2>
+                        class="text-gray-500 font-normal">({{ count($users) }})</span></h2>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full">
@@ -130,6 +130,10 @@
                             </tr>
                         @endforeach
                     </tbody>
+                    
+                     <div class="px-6 py-4">
+                    {{ $users->links() }}
+                </div>
                 </table>
             </div>
         </div>
