@@ -7,6 +7,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Auth\AuthenticationException;
 use App\Http\Middleware\AdminAuth;
+use App\Http\Middleware\AddFirebaseUUID;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'worker.mode' => WorkerMode::class,
             'facility.mode' => FacilityMode::class,
             'admin' => AdminAuth::class,
+            'firebase.uuid' => AddFirebaseUUID::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

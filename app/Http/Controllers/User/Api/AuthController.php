@@ -14,6 +14,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
@@ -57,6 +58,50 @@ class AuthController extends Controller
             ]);
         }
     }
+    
+    public function googleRegister(RegisterRequest $request)
+    {
+        try {
+            $validated = $request->validated();
+            DB::beginTransaction();
+
+            $user = User::create([
+                'role' => $validated['role'],
+                'full_name' => $validated['full_name'],
+                'email' => $validated['email'],
+                'phone_number' => $validated['phone_number'],
+                'password' => bcrypt($validated['password']),
+                'code' => 0,
+                'is_verified' => true,
+                'email_verified_at' => now(),
+                'is_google' => true,
+            ]);
+
+            activity()
+            ->causedBy($user)
+            ->inLog('register')
+            ->withProperties(['ip' => request()->ip()])
+            ->log('User Registered.');
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+            // 🔥 Fire event after successful registration
+            // event(new UserEmailVerification($user));
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => ['User registered successfully via Google.'],
+                'token' => $token,
+                'firebase_uid' => $user->firebase_uid,
+            ]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => [$th->getMessage()],
+            ]);
+        }
+    }
 
     public function verifyEmail(EmailVerificationRequest $request)
     {
@@ -82,6 +127,7 @@ class AuthController extends Controller
             ->log('User Email Verfiy.');
 
             DB::commit();
+
             if ($request['forget_password']) {
                 $token = $user->createToken('forget_password')->plainTextToken;
                 return response()->json([
@@ -90,10 +136,12 @@ class AuthController extends Controller
                     'token' => $token,
                 ]);
             }
+            
             return response()->json([
                 'success' => true,
                 'message' => ['Email verified successfully.'],
             ]);
+
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json([
@@ -195,6 +243,7 @@ class AuthController extends Controller
             ->inLog('password_reset')
             ->withProperties(['ip' => request()->ip()])
             ->log('User reset password.');
+            
 
             DB::commit();
             return response()->json([
@@ -253,7 +302,70 @@ class AuthController extends Controller
                 'success' => true,
                 'message' => ['Login successfully.'],
                 'token' => $token,
+                'firebase_uid' => $user->firebase_uid,
             ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => [$th->getMessage()]
+            ]);
+        }
+    }
+    
+    public function googleLogin(Request $request)
+    {
+        try {
+            
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->errors()->all(),
+                ], 422);
+            }
+
+            $validated = $validator->validated();
+
+            $user = User::where('email', $validated['email'])->first();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => ['User not found.'],
+                ]);
+            }
+
+            if (!$user->is_verified) {
+                return response()->json([
+                    'success' => false,
+                    'message' => ['Email not verified.'],
+                ]);
+            }
+
+            if (!$user->is_google) {
+                return response()->json([
+                    'success' => false,
+                    'message' => ['This email is not registered via Google. Please try normal login.'],
+                ]);
+            }
+
+            
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            activity()
+            ->causedBy($user)
+            ->inLog('google_login')
+            ->withProperties(['ip' => request()->ip()])
+            ->log('User logged in via Google');
+            return response()->json([
+                'success' => true,
+                'message' => ['Login successfully via Google.'],
+                'token' => $token,
+                'firebase_uid' => $user->firebase_uid,
+            ]);
+            
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => false,
@@ -387,5 +499,30 @@ class AuthController extends Controller
             ]);
         }
     }
+    
+    public function saveFirebaseUUID(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'firebase_uid' => 'required|string',
+            ]);
+
+            $user = auth()->user();
+
+            $user->update([
+                'firebase_uid' => $validated['firebase_uid'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => ['Firebase UID saved successfully.'],
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => [$th->getMessage()],
+            ]);
+        }
+    } 
 
 }

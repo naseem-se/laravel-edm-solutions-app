@@ -11,22 +11,25 @@ use App\Http\Controllers\User\Api\PaymentController;
 use App\Http\Controllers\User\Api\PrivacySettingsController;
 use App\Http\Controllers\User\Api\ProfileController;
 use App\Http\Controllers\User\Api\ShiftInvitationController;
+use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
 Route::get('/user', function (Request $request) {
-    return $request->user();
+    return new UserResource($request->user());
 })->middleware(['auth:sanctum']);
 
 
 Route::prefix('auth')->group(function () {
     Route::controller(AuthController::class)->group(function () {
         Route::post('register', 'register');
+        Route::post('google/register', 'googleRegister');
         Route::post('verify-email', 'verifyEmail');
         Route::post('resend-otp', 'resendOtp');
         Route::post('forget-password', 'forgetPassword');
         Route::post('login', 'login')->name('login');
+        Route::post('google/login', 'googleLogin')->name('google.login');
     });
 });
 
@@ -56,12 +59,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::get('/get/bank-account', 'getBankAccount');
             Route::post('/add/bank-account', 'addBankAccount');
             Route::get('/get/weekly-summary', 'getWeeklySummary');
+            Route::get('/get/compliance-document', 'getComplianceDocument');
             Route::post('/upload/compliance-document', 'uploadComplianceDocument');
             Route::post('/update/compliance-document', 'uploadComplianceDocument');
         });
 
         Route::get('/payment/weekly-summary', [PaymentController::class, 'getWeeklySummary']);
         Route::get('/payment/history', [PaymentController::class, 'getPaymentHistory']);
+        
         // Stripe Connect onboarding
         Route::post('/payment/onboard', [PaymentController::class, 'onboardRecipient']);
 
@@ -135,9 +140,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('upload/document', 'uploadDocument');
         Route::post('reset-password', 'resetPassword');
     });
+
+    Route::post('/save/firebase/uid', [AuthController::class, 'saveFirebaseUUID']);
 });
 
-Route::middleware('auth:sanctum')->group(function () {  
+Route::middleware(['auth:sanctum'])->group(function () {  
     // Get all privacy settings
     Route::get('/privacy-settings', [PrivacySettingsController::class, 'getSettings']);
     // Profile Visibility
@@ -150,7 +157,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/privacy-settings/biometric-lock', [PrivacySettingsController::class, 'updateBiometricLock']);
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     
     // FACILITY - Send invitation
     Route::post('/send/shift-invitations', [ShiftInvitationController::class, 'sendInvitation'])->middleware('facility.mode');

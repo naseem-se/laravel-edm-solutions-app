@@ -135,6 +135,7 @@ class HomeController extends Controller
                 'success' => true,
                 'data' => [
                     'total_shifts' => 1,
+                    'recepient_id' => $shift->claimShift?->user_id,
                     'worked_time' => sprintf("%d hr %d min", $workedHours, $remainingMinutes),
                     'total_amount' => '$' . number_format($totalAmount, 2),
                 ]
@@ -227,6 +228,7 @@ class HomeController extends Controller
             return response()->json([
                 'success' => true,
                 'workers' => $workers,
+                'firebase_uid' => auth()->user()->firebase_uid,
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -244,6 +246,7 @@ class HomeController extends Controller
             return response()->json([
                 'success' => true,
                 'worker' => new UserResource($worker),
+                'firebase_uid' => auth()->user()->firebase_uid,
             ]);
         } catch (\Throwable $th) {
             return response()->json([

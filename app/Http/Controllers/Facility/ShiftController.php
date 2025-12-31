@@ -69,6 +69,7 @@ class ShiftController extends Controller
             ], 500);
         }
     }
+    
     public function createBulkShift(Request $request)
     {
         // Validate request

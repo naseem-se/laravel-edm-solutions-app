@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('certificate')->nullable();
             $table->boolean('is_verified')->default(false);
             $table->enum('role', ['worker_mode', 'facility_mode']);
+             $table->text('firebase_uuid')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

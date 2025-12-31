@@ -15,44 +15,58 @@ use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
+
     public function updateProfile(Request $request)
     {
         try {
             $validated = $request->validate([
-                'address' => 'required|string|max:255',
-                'city' => 'required|string|max:100',
-                'zip_code' => 'required|string|max:20',
+                'address' => 'nullable|string|max:255',
+                'city' => 'nullable|string|max:100',
+                'zip_code' => 'nullable|string|max:20',
                 'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-                'department' => 'required|string|max:255',
-                'job_title' => 'required|string|max:255',
-                'specialities' => 'required|array',
-                'specialities.*' => 'string|max:255',
+                'department' => 'nullable|string|max:255',
+                'job_title' => 'nullable|string|max:255',
+                'specialities' => 'nullable|array',
+                'specialities.*' => 'nullable|string|max:255',
             ]);
 
             $user = auth()->user();
 
-            // Default to existing image
-            $filename = $user->image;
+            $updateData = [];
 
+            // Text fields – update only if present
+            foreach ([
+                'address',
+                'city',
+                'zip_code',
+                'department',
+                'job_title',
+                'specialities',
+            ] as $field) {
+                if ($request->has($field)) {
+                    $updateData[$field] = $validated[$field] ?? null;
+                }
+            }
+
+            // Image handling
             if ($request->hasFile('image')) {
-                // Delete old image safely
+
                 if ($user->image && Storage::disk('public')->exists($user->image)) {
                     Storage::disk('public')->delete($user->image);
                 }
 
-                // Store new image
-                $filename = $request->file('image')->store('profile', 'public');
+                $updateData['image'] = $request->file('image')->store('profile', 'public');
             }
 
-            $user->update([
-                'address' => $validated['address'],
-                'city' => $validated['city'],
-                'zip_code' => $validated['zip_code'],
-                'image' => $filename,
-                'department' => $validated['department'],
-                'job_title' => $validated['job_title'],
-                'specialities' => $validated['specialities'], // JSON cast recommended
-            ]);
+            // Nothing to update
+            if (empty($updateData)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No data provided to update',
+                ], 422);
+            }
+
+            $user->update($updateData);
 
             return response()->json([
                 'success' => true,
@@ -68,6 +82,7 @@ class ProfileController extends Controller
             ], 500);
         }
     }
+
 
     public function changePassword(ChangePasswordRequest $request)
     {
@@ -267,6 +282,24 @@ class ProfileController extends Controller
                 'message' => $th->getMessage()
             ], 500);
         }
+    }
+
+    public function getComplianceDocument(Request $request){
+
+        try {
+            $userId = auth()->id();
+            $documents = Document::where('user_id', $userId)->get();
+            return response()->json([
+                'success' => true,
+                'data' => $documents
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => $th->getMessage()
+            ]);
+        }
+
     }
 
 
