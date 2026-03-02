@@ -92,32 +92,73 @@ class StripePaymentService
     public function createPaymentIntentWithTransfer($amount, $recipientAccountId, $platformFee, $currency = 'usd', $metadata = [])
     {
         try {
-            $paymentIntent = PaymentIntent::create([
-                'amount' => $amount * 100, // Convert to cents
-                'currency' => $currency,
-                'application_fee_amount' => $platformFee * 100, // Platform fee in cents
-                'transfer_data' => [
-                    'destination' => $recipientAccountId,
-                ],
+            // Validation
+            if ($amount <= 0 || $platformFee < 0) {
+                throw new InvalidArgumentException('Invalid amount or platform fee');
+            }
+    
+            if (empty($recipientAccountId)) {
+                throw new InvalidArgumentException('Recipient account ID is required');
+            }
+    
+            // Ensure amount exceeds platform fee
+            if ($amount * 100 < $platformFee * 100) {
+                throw new InvalidArgumentException('Platform fee cannot exceed payment amount');
+            }
+    
+            $paymentIntentData = [
+                'amount' => (int)($amount * 100), // Convert to cents
+                'currency' => strtolower($currency),
+                'confirm' => false, // Don't confirm automatically
                 'metadata' => $metadata,
                 'automatic_payment_methods' => [
                     'enabled' => true,
                     'allow_redirects' => 'never',
                 ],
-            ]);
-
+            ];
+    
+            // Only add transfer_data if recipient is a connected account
+            if (!empty($recipientAccountId)) {
+                $paymentIntentData['transfer_data'] = [
+                    'destination' => $recipientAccountId,
+                ];
+            }
+    
+            // Only add application fee if there's a fee to charge
+            if ($platformFee > 0) {
+                $paymentIntentData['application_fee_amount'] = (int)($platformFee * 100);
+            }
+    
+            $paymentIntent = PaymentIntent::create($paymentIntentData);
+    
             return [
                 'success' => true,
                 'client_secret' => $paymentIntent->client_secret,
                 'payment_intent_id' => $paymentIntent->id,
+                'amount' => $paymentIntent->amount,
+                'status' => $paymentIntent->status,
+            ];
+        } catch (InvalidArgumentException $e) {
+            return [
+                'success' => false,
+                'error' => 'validation_error',
+                'message' => $e->getMessage(),
+            ];
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            return [
+                'success' => false,
+                'error' => $e->getError()->code ?? 'api_error',
+                'message' => $e->getMessage(),
             ];
         } catch (Exception $e) {
             return [
                 'success' => false,
+                'error' => 'unknown_error',
                 'message' => $e->getMessage(),
             ];
         }
     }
+
 
     /**
      * Create separate transfer (alternative method)
@@ -197,7 +238,8 @@ class StripePaymentService
             }
 
             $intent->confirm([
-                'payment_method' => $paymentMethodId ?? 'pm_card_visa',
+                'payment_method' => $paymentMethodId,
+                // 'payment_method' => $paymentMethodId ?? 'pm_card_visa',
             ]);
 
             return $intent;

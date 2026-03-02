@@ -21,7 +21,7 @@ class PaymentResource extends JsonResource
             'status' => $this->status,
             'created_at' => $this->created_at?->format('Y-m-d'),
             'due_date' => $this->created_at->addDays(10)->format('Y-m-d'),
-            'total_hours' => $this->calculateHours($this->shift),
+            'total_hours' => $this->calculateHours($this->shift?->claimShift),
             'total_shifts' => (int) preg_replace('/\D+/', '', $this->description),
 
             // Recipient
@@ -56,9 +56,14 @@ class PaymentResource extends JsonResource
                 $end->addDay();
             }
 
-            return round($start->diffInMinutes($end) / 60, 1);
+            $totalMinutes = $start->diffInMinutes($end);
+
+            $hours = intdiv($totalMinutes, 60);
+            $minutes = $totalMinutes % 60;
+
+            return "{$hours}h {$minutes}m";
         } catch (\Exception $e) {
-            return 0;
+            return "0h 0m";
         }
     }
 }

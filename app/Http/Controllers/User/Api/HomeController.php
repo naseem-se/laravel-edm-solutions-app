@@ -7,6 +7,7 @@ use App\Http\Requests\ClaimShiftRequest;
 use App\Http\Resources\ShiftResource;
 use App\Models\ClaimShift;
 use App\Models\Shift;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -47,7 +48,7 @@ class HomeController extends Controller
     public function shiftDetails($id)
     {
         try {
-            $shift = Shift::where('status', 1)->findOrFail($id);
+            $shift = Shift::findOrFail($id);
             return response()->json([
                 'success' => true,
                 'data' => new ShiftResource($shift)
@@ -88,6 +89,7 @@ class HomeController extends Controller
 
             // ❌ Check for overlapping claimed shifts — based on the related shift date
             $hasConflict = $user->claimShifts()
+                ->whereNull('check_out')
                 ->whereHas('shift', function ($q) use ($shift) {
                     $q->whereDate('date', $shift->date);
                 })
@@ -175,6 +177,8 @@ class HomeController extends Controller
                 ) {
                     $check_out_enabled = true;
                 }
+                
+                $user = User::find($claimed_shift->shift->user_id);
 
                 return [
                     'id' => $claimed_shift->id,
@@ -185,6 +189,12 @@ class HomeController extends Controller
                     'check_in_enabled' => $check_in_enabled,
                     'check_out_enabled' => $check_out_enabled,
                     'location' => $claimed_shift->location,
+                    'facility_id' => $user->id,
+                    'facility_name' => $user->facility_name,
+                    'firebase_uid' => $user->firebase_uid,
+                    'address'=>$user->address,
+                    'pay_per_hour'=>$claimed_shift->shift->pay_per_hour,
+                    'date'=>$claimed_shift->shift->date,
                     'status'=> $this->getStatusText($claimed_shift->shift->status),
                     'created_at' => $claimed_shift->created_at->toDateTimeString(),
                 ];

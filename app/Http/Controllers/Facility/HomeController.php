@@ -72,14 +72,11 @@ class HomeController extends Controller
         try {
             $user = auth()->user();
 
-            $shifts = Shift::with([
-                'claimShift' => function ($query) use ($user) {
-                    $query->where('user_id', $user->id);
-                }
-            ])
-                ->whereHas('claimShift', function ($query) use ($user) {})
+            $shifts = Shift::with('claimShift' )
+                
                 ->whereIn('status', [4, 5, 6])
                 ->orderBy('date', 'desc')
+                ->where('user_id', $user->id)
                 ->get()
                 ->groupBy('status');
 
@@ -113,22 +110,40 @@ class HomeController extends Controller
             $checkIn = $shift->claimShift?->check_in ? Carbon::parse($shift->claimShift->check_in) : null;
             $checkOut = $shift->claimShift?->check_out ? Carbon::parse($shift->claimShift->check_out) : null;
 
-            $workedMinutes = 0;
-            if ($checkIn && $checkOut) {
-                // handle overnight shifts (e.g. 9 PM → 3 AM)
-                if ($checkOut->lessThan($checkIn)) {
-                    $checkOut->addDay();
-                }
-                $workedMinutes = $checkIn->diffInMinutes($checkOut);
+            $workedTime = '';
+        $workedHours = 0;
+        $workedMins = 0;
+        $workedMinutes = 0;
+
+        if (
+            !empty($checkIn) &&
+            !empty($checkOut) &&
+            $checkIn instanceof \Carbon\Carbon &&
+            $checkOut instanceof \Carbon\Carbon &&
+            $checkIn->format('H:i:s') !== '00:00:00' &&
+            $checkOut->format('H:i:s') !== '00:00:00'
+        ) {
+            // Clone to avoid mutating original objects
+            $in = $checkIn->copy();
+            $out = $checkOut->copy();
+
+            // Handle overnight shift (e.g. 10 PM → 6 AM)
+            if ($out->lessThan($in)) {
+                $out->addDay();
             }
 
-            // Convert minutes to hours
-            $workedHours = floor($workedMinutes / 60);
-            $remainingMinutes = $workedMinutes % 60;
+            $workedMinutes = $in->diffInMinutes($out);
+            $workedHours = intdiv($workedMinutes, 60);
+            $workedMins = $workedMinutes % 60;
 
-            // Calculate total pay based on hourly rate
-            $rate = $shift->pay_per_hour ?? 0;
-            $totalAmount = round(($workedMinutes / 60) * $rate, 2);
+            $workedTime = sprintf(' (Worked: %d hr %d min)', $workedHours, $workedMins);
+        }
+
+        // Null-safe pay_per_hour
+         $payPerHour = $shift->pay_per_hour ?? 0;
+
+        // Final total pay (safe even if no check-in/out)
+        $totalPay = ($payPerHour * $workedHours) + ($payPerHour * $workedMins / 60);
 
             // Format display
             return response()->json([
@@ -136,8 +151,8 @@ class HomeController extends Controller
                 'data' => [
                     'total_shifts' => 1,
                     'recepient_id' => $shift->claimShift?->user_id,
-                    'worked_time' => sprintf("%d hr %d min", $workedHours, $remainingMinutes),
-                    'total_amount' => '$' . number_format($totalAmount, 2),
+                    'worked_time' => sprintf("%d hr %d min", $workedHours, $workedMins),
+                    'total_amount' => round($totalPay, 2),
                 ]
             ]);
         } catch (\Throwable $th) {

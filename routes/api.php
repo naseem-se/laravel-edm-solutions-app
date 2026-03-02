@@ -11,9 +11,9 @@ use App\Http\Controllers\User\Api\PaymentController;
 use App\Http\Controllers\User\Api\PrivacySettingsController;
 use App\Http\Controllers\User\Api\ProfileController;
 use App\Http\Controllers\User\Api\ShiftInvitationController;
-use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Resources\UserResource;
 
 
 Route::get('/user', function (Request $request) {

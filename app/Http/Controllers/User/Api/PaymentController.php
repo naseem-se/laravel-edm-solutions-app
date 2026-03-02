@@ -123,7 +123,7 @@ class PaymentController extends Controller
 
             // Payments received by user (as recipient)
             $paymentsReceived = Payment::where('recipient_id', $user->id)
-                ->with(['recipient', 'shift'])
+                ->with(['recipient', 'shift','shift.claimShift'])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
@@ -212,12 +212,22 @@ class PaymentController extends Controller
 
             $metadata = [
                 'payer_id' => $user->id,
+                'payer_name' => $user->full_name,
                 'recipient_id' => $recipient->id,
+                'recipient_name' => $recipient->full_name,
                 'shift_ids' => implode(',', $request->shift_ids),
             ];
 
             $platformFeePercentage = PlatformConfig::getValue('commission_percentage', 10);
             $platformFee = ($request->amount * $platformFeePercentage) / 100;
+            
+            $shift_payment = Payment::where('shift_id', $request->shift_ids[0])
+                ->where('status', 'pending')
+                ->first();
+
+            if ($shift_payment) {
+                $shift_payment->delete();
+            }
 
             // Create payment intent with automatic transfer
             $result = $this->stripeService->createPaymentIntentWithTransfer(
@@ -242,7 +252,7 @@ class PaymentController extends Controller
                 'shift_id' => $request->shift_ids[0] ?? null, // Primary shift
                 'payment_intent_id' => $result['payment_intent_id'],
                 'amount' => $request->amount,
-                'platform_fee' => $request->platform_fee,
+                'platform_fee' => $platformFee,
                 'recipient_amount' => $request->recipient_amount,
                 'currency' => 'usd',
                 'status' => 'pending',
@@ -251,10 +261,10 @@ class PaymentController extends Controller
                 'metadata' => $metadata,
             ]);
 
-            $shift = Shift::where('status', 5)->findOrFail($request->shift_ids[0]);
-            $shift->update([
-                'status' => 6
-            ]);
+            // $shift = Shift::where('status', 5)->findOrFail($request->shift_ids[0]);
+            // $shift->update([
+            //     'status' => 6
+            // ]);
 
             return response()->json([
                 'success' => true,
@@ -288,7 +298,7 @@ class PaymentController extends Controller
     {
         $request->validate([
             'payment_intent_id' => 'required|string',
-            'payment_method_id' => 'nullable|string',
+            'payment_method_id' => 'required|string',
         ]);
 
         try {
@@ -304,6 +314,11 @@ class PaymentController extends Controller
                 'payment_method_id' => $intent->payment_method ?? null,
                 'paid_at' => $intent->status === 'succeeded' ? now() : null,
                 'transfer_status' => $intent->status === 'succeeded' ? 'succeeded' : 'pending',
+            ]);
+
+            $shift = Shift::where('status', 5)->findOrFail($payment->shift_id);
+            $shift->update([
+                'status' => 6
             ]);
 
             // ⚠️ Do NOT update shifts here; let webhook handle it

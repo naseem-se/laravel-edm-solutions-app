@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -25,7 +24,12 @@ return new class extends Migration
             $table->string('certificate')->nullable();
             $table->boolean('is_verified')->default(false);
             $table->enum('role', ['worker_mode', 'facility_mode']);
-             $table->text('firebase_uuid')->nullable();
+            $table->text('firebase_uid')->nullable();
+
+            $table->string('billing_contact_name')->nullable();
+            $table->string('billing_contact_email')->nullable();
+            $table->string('scheduling_contact_name')->nullable();
+            $table->string('scheduling_contact_email')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

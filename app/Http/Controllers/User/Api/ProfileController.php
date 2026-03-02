@@ -12,10 +12,10 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\Document;
 use Exception;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Resources\UserResource;
 
 class ProfileController extends Controller
 {
-
     public function updateProfile(Request $request)
     {
         try {
@@ -23,18 +23,25 @@ class ProfileController extends Controller
                 'address' => 'nullable|string|max:255',
                 'city' => 'nullable|string|max:100',
                 'zip_code' => 'nullable|string|max:20',
-                'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+                'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'department' => 'nullable|string|max:255',
                 'job_title' => 'nullable|string|max:255',
                 'specialities' => 'nullable|array',
-                'specialities.*' => 'nullable|string|max:255',
+                'specialities.*' => 'string|max:255',
             ]);
 
             $user = auth()->user();
 
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated',
+                ], 401);
+            }
+
             $updateData = [];
 
-            // Text fields – update only if present
+            /* ---------- Text & Array Fields ---------- */
             foreach ([
                 'address',
                 'city',
@@ -48,17 +55,19 @@ class ProfileController extends Controller
                 }
             }
 
-            // Image handling
+            /* ---------- Image Handling ---------- */
             if ($request->hasFile('image')) {
 
                 if ($user->image && Storage::disk('public')->exists($user->image)) {
                     Storage::disk('public')->delete($user->image);
                 }
 
-                $updateData['image'] = $request->file('image')->store('profile', 'public');
+                $updateData['image'] = $request
+                    ->file('image')
+                    ->store('profile', 'public');
             }
 
-            // Nothing to update
+            /* ---------- Nothing to Update ---------- */
             if (empty($updateData)) {
                 return response()->json([
                     'success' => false,
@@ -71,7 +80,7 @@ class ProfileController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Profile updated successfully',
-                'data' => $user->fresh(),
+                'data' => new UserResource($user->fresh()),
             ]);
 
         } catch (\Throwable $th) {
@@ -82,7 +91,6 @@ class ProfileController extends Controller
             ], 500);
         }
     }
-
 
     public function changePassword(ChangePasswordRequest $request)
     {
@@ -217,7 +225,7 @@ class ProfileController extends Controller
     {
         $request->validate([
             'type' => 'required|string|max:100',
-            'document' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:2048'
+            'document' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10048'
         ]);
 
         try {
@@ -283,23 +291,30 @@ class ProfileController extends Controller
             ], 500);
         }
     }
-
-    public function getComplianceDocument(Request $request){
-
+    
+    public function getComplianceDocument(Request $request)
+    {
         try {
             $userId = auth()->id();
+
             $documents = Document::where('user_id', $userId)->get();
+
+            $documents->transform(function ($doc) {
+                $doc->document = Storage::url($doc->document);
+                return $doc;
+            });
+
             return response()->json([
                 'success' => true,
                 'data' => $documents
             ]);
+
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => false,
                 'message' => $th->getMessage()
             ]);
         }
-
     }
 
 

@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Models\User;
 
 class ShiftResource extends JsonResource
 {
@@ -14,6 +15,9 @@ class ShiftResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+
+        $user = User::find($this->user_id);
+
         return [
             'id' => $this->id,
             'special_instruction' => $this->special_instruction,
@@ -28,6 +32,10 @@ class ShiftResource extends JsonResource
             'status_text' => $this->getStatusText($this->status),
             'is_claimed' => $this->status == 3 ? 'Claimed' : 'Claim',
             'date' => $this->date,
+            'facility_id' => $user->id,
+            'facility_name' => $user->facility_name,
+            'address'=>$user->address,
+            'firebase_uid'=>$user->firebase_uid,
             'claimed_by' => $this->claimShift ? new UserResource($this->claimShift->user) : null,
         ];
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Facility;
 use App\Http\Controllers\Controller;
 use App\Models\FacilityDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -19,26 +20,43 @@ class ProfileController extends Controller
         ]);
     }
     public function updateProfile(Request $request)
-    {
-        // Validate the incoming request data
-        $validatedData = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . auth()->id(),
-            'facility_name' => 'required|string|max:255',
-            'address' => 'required|string|max:500',
-            'phone_number' => 'required|string|max:20',
-        ]);
+{
+    $user = auth()->user();
 
-        // Update the facility profile
-        $facility = auth()->user();
-        $facility->update($validatedData);
+    // Validate request
+    $validatedData = $request->validate([
+        'full_name'     => 'required|string|max:255',
+        'email'         => 'required|email|unique:users,email,' . $user->id,
+        'facility_name' => 'required|string|max:255',
+        'address'       => 'required|string|max:500',
+        'phone_number'  => 'required|string|max:20',
+        'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Profile updated successfully',
-            'data' => $facility,
-        ]);
+    // Handle image upload
+    if ($request->hasFile('image')) {
+
+        // Delete old image if exists
+        if ($user->image && Storage::disk('public')->exists($user->image)) {
+            Storage::disk('public')->delete($user->image);
+        }
+
+        // Store new image
+        $validatedData['image'] = $request
+            ->file('image')
+            ->store('profile', 'public');
     }
+
+    // Update user profile
+    $user->update($validatedData);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Profile updated successfully',
+        'data'    => $user,
+    ]);
+}
+
 
     public function getFacilityDetail()
     {

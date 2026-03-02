@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class FilledShiftResource extends JsonResource
 {
@@ -29,18 +30,28 @@ class FilledShiftResource extends JsonResource
         $totalHours = $start->diffInHours($end);
 
         // Calculate worked time if checked in and out
+        
         $workedTime = '';
+        $workedHours = 0;
+        $workedMins = 0;
+        $workedMinutes = 0;
+
         if (
-            $checkIn && $checkOut &&
+            !empty($checkIn) &&
+            !empty($checkOut) &&
             $checkIn->format('H:i:s') !== '00:00:00' &&
             $checkOut->format('H:i:s') !== '00:00:00'
         ) {
+            // Clone to avoid mutating original objects
+            $in = $checkIn->copy();
+            $out = $checkOut->copy();
 
-            if ($checkOut->lessThan($checkIn)) {
-                $checkOut->addDay();
+            // Handle overnight shift (e.g. 10 PM → 6 AM)
+            if ($out->lessThan($in)) {
+                $out->addDay();
             }
 
-            $workedMinutes = $checkIn->diffInMinutes($checkOut);
+            $workedMinutes = $in->diffInMinutes($out);
             $workedHours = intdiv($workedMinutes, 60);
             $workedMins = $workedMinutes % 60;
 
@@ -52,20 +63,30 @@ class FilledShiftResource extends JsonResource
         $dutyEnd = \Carbon\Carbon::parse($this->end_time)->format('H:i');
 
         // Get facility name from location or use a default
-        $facilityName = $this->location ?? 'St. Mary Care';
+        $facilityName = $this->location ?? 'Unknown';
 
         // Get user's license info
-        $licenseType = $this->license_type ?? 'RN';
-        $userName = $this->user->name ?? 'Alexander Steve';
+        $licenseType = $this->license_type ?? 'Unknown';
+        $userName = $this->claimShift->user->full_name ?? 'Unknown';
 
         // Assuming you have an expiration date field, adjust as needed
-        $licenseExpiry = '2026-04-02'; // You may need to get this from user model
+        // $licenseExpiry = '2026-04-02'; // You may need to get this from user model
+        
+        // Null-safe pay_per_hour
+        $payPerHour = $this->pay_per_hour ?? 0;
+
+        // Final total pay (safe even if no check-in/out)
+        $totalPay = ($payPerHour * $workedHours) + ($payPerHour * $workedMins / 60);
 
         return [
             'id' => $this->id,
-            'title' => "Morning RN {$facilityName}",
+            'title' => $this->title,
+            'worker_id' => $this->claimShift?->user_id,
             'user_name' => $userName,
-            'license_info' => "License: {$licenseType} • Exp: {$licenseExpiry}",
+            'image' =>  $this->user->image
+                        ? Storage::url( $this->user->image)
+                        : null,
+            'license_info' => "License: {$licenseType}",
             'duty_time' => sprintf(
                 '%s • %s — %s • %d Hr%s',
                 $dutyDate,
@@ -78,6 +99,7 @@ class FilledShiftResource extends JsonResource
             'special_instruction' => $this->special_instruction,
             'location' => $this->location,
             'pay_per_hour' => $this->pay_per_hour,
+            'total_amount' => round($totalPay, 2),
         ];
     }
 }
